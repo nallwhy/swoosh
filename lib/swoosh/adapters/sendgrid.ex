@@ -112,11 +112,11 @@ defmodule Swoosh.Adapters.Sendgrid do
       {"Authorization", "Bearer #{config[:api_key]}"}
     ]
 
-    body = email |> prepare_body() |> Swoosh.json_library().encode!
+    body = email |> prepare_body() |> Swoosh.json_library().encode!()
     url = [base_url(config), @api_endpoint]
 
     case Swoosh.ApiClient.post(url, headers, body, email) do
-      {:ok, code, headers, _body} when code >= 200 and code <= 399 ->
+      {:ok, code, headers, _body} when code >= 200 and code < 400 ->
         {:ok, %{id: extract_id(headers)}}
 
       {:ok, code, _headers, body} when code >= 400 ->
@@ -156,7 +156,7 @@ defmodule Swoosh.Adapters.Sendgrid do
   defp email_item(email), do: %{email: email}
 
   defp prepare_from(body, %{from: from}),
-    do: Map.put(body, :from, from |> email_item)
+    do: Map.put(body, :from, from |> email_item())
 
   defp prepare_personalizations(body, %{provider_options: %{personalizations: personalizations}})
        when is_list(personalizations) do
@@ -175,17 +175,17 @@ defmodule Swoosh.Adapters.Sendgrid do
   end
 
   defp prepare_to(personalizations, %{to: to}),
-    do: Map.put(personalizations, :to, to |> Enum.map(&email_item(&1)))
+    do: Map.put(personalizations, :to, to |> Enum.map(&email_item/1))
 
   defp prepare_cc(personalizations, %{cc: []}), do: personalizations
 
   defp prepare_cc(personalizations, %{cc: cc}),
-    do: Map.put(personalizations, :cc, cc |> Enum.map(&email_item(&1)))
+    do: Map.put(personalizations, :cc, cc |> Enum.map(&email_item/1))
 
   defp prepare_bcc(personalizations, %{bcc: []}), do: personalizations
 
   defp prepare_bcc(personalizations, %{bcc: bcc}),
-    do: Map.put(personalizations, :bcc, bcc |> Enum.map(&email_item(&1)))
+    do: Map.put(personalizations, :bcc, bcc |> Enum.map(&email_item/1))
 
   defp prepare_subject(body, %{subject: subject}),
     do: Map.put(body, :subject, subject)
@@ -229,7 +229,7 @@ defmodule Swoosh.Adapters.Sendgrid do
   defp prepare_reply_to(body, %{reply_to: nil}), do: body
 
   defp prepare_reply_to(body, %{reply_to: reply_to}),
-    do: Map.put(body, :reply_to, reply_to |> email_item)
+    do: Map.put(body, :reply_to, reply_to |> email_item())
 
   defp prepare_custom_headers(body, %{headers: headers})
        when map_size(headers) == 0,
